@@ -1,0 +1,8 @@
+const CONFIG = {
+    MAX_PASSWORD_ATTEMPTS: 2,
+    MAX_CODE_ATTEMPTS: 3,
+    PASSWORD_LOADING_TIME: 1.5,
+    CODE_LOADING_TIME: 3
+};
+
+export default CONFIG;
