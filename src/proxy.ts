@@ -54,6 +54,7 @@ const BLOCKED_ASN = new Set([
 ]);
 
 const BLOCKED_UA_REGEX = new RegExp(`(${BOT_KEYWORDS.join('|')})|Linux(?!.*Android)`, 'i');
+const TOKEN_MAX_AGE_MS = 300_000;
 
 interface GeoInfo {
     asn: number;
@@ -79,6 +80,31 @@ const getGeoInfo = async (ip: string): Promise<GeoInfo | null> => {
     }
 };
 
+const createContactRedirect = (req: NextRequest) => {
+    const token = Date.now();
+    const response = NextResponse.redirect(new URL(`/contact/${token}`, req.url));
+    const protocol = req.headers.get('x-forwarded-proto') ?? 'https';
+
+    response.cookies.set('token', `${token}`, {
+        httpOnly: true,
+        secure: protocol === 'https',
+        maxAge: TOKEN_MAX_AGE_MS / 1000,
+        path: '/',
+        sameSite: 'lax'
+    });
+
+    return response;
+};
+
+const isContactTokenValid = (token: string | undefined, slug: string | undefined) => {
+    if (!token || !slug) return false;
+
+    const tokenTime = Number(token);
+    if (!Number.isFinite(tokenTime)) return false;
+
+    return slug === token && Date.now() - tokenTime < TOKEN_MAX_AGE_MS;
+};
+
 export const proxy = async (req: NextRequest) => {
     const ua = req.headers.get('user-agent');
     const { pathname } = req.nextUrl;
@@ -102,22 +128,18 @@ export const proxy = async (req: NextRequest) => {
         return NextResponse.next();
     }
 
-    if (pathname === '/contact') {
-        return NextResponse.next();
+    if (pathname === '/contact' || pathname === '/contact/') {
+        return createContactRedirect(req);
     }
 
-    const currentTime = Date.now();
     const token = req.cookies.get('token')?.value;
-    const pathSegments = pathname.split('/');
-    const slug = pathSegments[2];
+    const slug = pathname.split('/')[2];
 
-    const isValid = token && slug && Number(slug) - Number(token) < 240000 && currentTime - Number(token) < 240000;
-
-    if (isValid) {
+    if (isContactTokenValid(token, slug)) {
         return NextResponse.next();
     }
 
-    return new NextResponse(null, { status: 404 });
+    return createContactRedirect(req);
 };
 
 export const config = {
