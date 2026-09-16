@@ -2,7 +2,7 @@
 
 import { store } from '@/store/store';
 import dynamic from 'next/dynamic';
-import { type FC, memo, useCallback, useMemo, useRef } from 'react';
+import { type FC, memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import 'intl-tel-input/styles';
 
 const IntlTelInput = dynamic(() => import('intl-tel-input/reactWithUtils'), {
@@ -22,7 +22,10 @@ const PhoneInput: FC<PhoneInputProps> = ({ id, name, onChange, error, inputClass
     const geoInfo = store((state) => state.geoInfo);
     const countryCode = geoInfo?.country_code?.toLowerCase() || 'us';
     const onChangeRef = useRef(onChange);
-    onChangeRef.current = onChange;
+
+    useLayoutEffect(() => {
+        onChangeRef.current = onChange;
+    });
 
     const initOptions = useMemo(
         () => ({

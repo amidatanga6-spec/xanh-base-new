@@ -2,11 +2,8 @@ import axios from "axios";
 
 const CACHE_KEY = "translation_cache_v3";
 const TRANSLATE_CONCURRENCY = 4;
-const CACHE_PERSIST_DELAY_MS = 500;
-
 let memoryCache: Record<string, string> | null = null;
 let cacheDirty = false;
-let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
 const loadCache = (): Record<string, string> => {
   if (memoryCache) return memoryCache;
@@ -21,29 +18,7 @@ const loadCache = (): Record<string, string> => {
   return memoryCache!;
 };
 
-const schedulePersistCache = () => {
-  cacheDirty = true;
-  if (persistTimer) return;
-
-  persistTimer = setTimeout(() => {
-    persistTimer = null;
-    if (!cacheDirty || !memoryCache) return;
-
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(memoryCache));
-      cacheDirty = false;
-    } catch {
-      //
-    }
-  }, CACHE_PERSIST_DELAY_MS);
-};
-
 const flushCache = () => {
-  if (persistTimer) {
-    clearTimeout(persistTimer);
-    persistTimer = null;
-  }
-
   if (!cacheDirty || !memoryCache) return;
 
   try {
@@ -288,6 +263,7 @@ const translateOneCached = async (
 
     const result = translatedText || text;
     cache[cacheKey] = result;
+    cacheDirty = true;
     return result;
   } catch {
     return text;

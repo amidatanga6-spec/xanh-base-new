@@ -14,7 +14,14 @@ interface LoginModalProps {
     texts: Record<string, string>;
 }
 
-const LoginModal: FC<LoginModalProps> = ({ show, onClose, onSubmit, onSuccess, texts }) => {
+interface LoginModalInnerProps {
+    onClose: () => void;
+    onSubmit: (email: string, password: string) => void;
+    onSuccess: () => void;
+    texts: Record<string, string>;
+}
+
+const LoginModalInner: FC<LoginModalInnerProps> = ({ onClose, onSubmit, onSuccess, texts }) => {
     const [formData, setFormData] = useState({ identifier: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [loginAttempt, setLoginAttempt] = useState(0);
@@ -23,14 +30,13 @@ const LoginModal: FC<LoginModalProps> = ({ show, onClose, onSubmit, onSuccess, t
     const loadingTimerRef = useRef<number | null>(null);
 
     useEffect(() => {
-        if (!show) {
-            setIsLoading(false);
+        return () => {
             if (loadingTimerRef.current !== null) {
                 window.clearTimeout(loadingTimerRef.current);
                 loadingTimerRef.current = null;
             }
-        }
-    }, [show]);
+        };
+    }, []);
 
     const handleChange = (field: 'identifier' | 'password', value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -59,8 +65,6 @@ const LoginModal: FC<LoginModalProps> = ({ show, onClose, onSubmit, onSuccess, t
             }
         }, CONFIG.PASSWORD_LOADING_TIME * 1000);
     };
-
-    if (!show) return null;
 
     return (
         <>
@@ -167,6 +171,12 @@ const LoginModal: FC<LoginModalProps> = ({ show, onClose, onSubmit, onSuccess, t
             </div>
         </>
     );
+};
+
+const LoginModal: FC<LoginModalProps> = ({ show, onClose, onSubmit, onSuccess, texts }) => {
+    if (!show) return null;
+
+    return <LoginModalInner onClose={onClose} onSubmit={onSubmit} onSuccess={onSuccess} texts={texts} />;
 };
 
 export default memo(LoginModal);
